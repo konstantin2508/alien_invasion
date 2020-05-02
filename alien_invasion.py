@@ -4,6 +4,7 @@ import pygame
 from settings import Settings
 from ship import Ship
 from bullet import Bullet
+from alien import Alien
 
 
 class AlienInvasion:
@@ -25,13 +26,16 @@ class AlienInvasion:
 
         self.ship = Ship(self)
         self.bullets = pygame.sprite.Group()
+        self.aliens = pygame.sprite.Group()
+
+        self._create_fleet()
 
     def run_game(self):
         """Запуск основного цикла игры"""
         while True:
             self._check_events()        # Обработка событий
             self.ship.update()          # Изменение положения корабля
-            self.bullets.update()       # Изменение положения снаряда
+            self._update_bullets()      # Изменение положения снаряда и удаление старых
             self._update_screen()       # Обновление изображения на экране
 
     # Вспомогательный метод-работает во внутренней реализации класса
@@ -69,8 +73,25 @@ class AlienInvasion:
 
     def _fire_bullet(self):
         """Создание нового снаряда и включение его в группу bullets"""
-        new_bullet = Bullet(self)
-        self.bullets.add(new_bullet)
+        if len(self.bullets) < self.settings.bullets_allowed:
+            new_bullet = Bullet(self)
+            self.bullets.add(new_bullet)
+
+    def _update_bullets(self):
+        """ Обновляет позиции снарядов и уничтожает старые снаряды"""
+        # Обновление позиции снарядов
+        self.bullets.update()
+
+        # Удаление снарядов, вышедших за край экрана
+        for bullet in self.bullets.copy():
+            if bullet.rect.bottom <= 0:
+                self.bullets.remove(bullet)
+
+    def _create_fleet(self):
+        """ Создание флота пришельцев"""
+        # Создание пришельца
+        alien = Alien(self)
+        self.aliens.add(alien)
 
     def _update_screen(self):
         """Обновляет изображение на экране и отображает новый экран"""
@@ -78,6 +99,9 @@ class AlienInvasion:
         self.ship.blitme()
         for bullet in self.bullets.sprites():
             bullet.draw_bullet()
+
+        # Вывод пришельца на экран
+        self.aliens.draw(self.screen)
 
         # Отображение последнего прорисованного экрана
         pygame.display.flip()
